@@ -279,6 +279,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Order tracking (public API that doesn't require authentication)
+  app.post("/api/orders/track", async (req, res) => {
+    try {
+      const { orderId, email } = req.body;
+      
+      if (!orderId || !email) {
+        return res.status(400).json({ message: "Order ID and email are required" });
+      }
+      
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Validate that the email matches the order
+      if (order.customerEmail.toLowerCase() !== email.toLowerCase()) {
+        return res.status(403).json({ message: "Email doesn't match order record" });
+      }
+      
+      // Include order items in the response
+      const orderItems = await storage.getOrderItems(orderId);
+      res.json({ ...order, items: orderItems });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to track order" });
+    }
+  });
+  
   app.post("/api/orders", async (req, res) => {
     try {
       const parseResult = insertOrderSchema.safeParse(req.body);
