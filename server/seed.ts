@@ -77,6 +77,62 @@ async function seed() {
   // Seed site settings
   const settingsExist = await db.select().from(siteSettings);
   
+  // Check if shipping and payment settings exist
+  const shippingSettingExists = await db.select().from(siteSettings).where(eq(siteSettings.key, 'shipping_methods'));
+  const paymentSettingExists = await db.select().from(siteSettings).where(eq(siteSettings.key, 'payment_methods'));
+  
+  // Add shipping methods if they don't exist
+  if (shippingSettingExists.length === 0) {
+    console.log('Adding shipping methods...');
+    await db.insert(siteSettings).values({
+      key: "shipping_methods",
+      value: JSON.stringify([
+        { 
+          id: "standard", 
+          name: "Standard Shipping", 
+          description: "3-5 business days", 
+          price: 10 
+        },
+        { 
+          id: "express", 
+          name: "Express Shipping", 
+          description: "1-2 business days", 
+          price: 15 
+        }
+      ]),
+      group: "shipping",
+      label: "Shipping Methods",
+      type: "json"
+    });
+    console.log('Shipping methods added.');
+  }
+  
+  // Add payment methods if they don't exist
+  if (paymentSettingExists.length === 0) {
+    console.log('Adding payment methods...');
+    await db.insert(siteSettings).values({
+      key: "payment_methods",
+      value: JSON.stringify([
+        {
+          id: "cod",
+          name: "Cash on Delivery",
+          description: "Pay when you receive your order",
+          enabled: true
+        },
+        {
+          id: "paymob",
+          name: "Credit/Debit Card (Paymob)",
+          description: "Secure online payment with Paymob",
+          enabled: true
+        }
+      ]),
+      group: "payment",
+      label: "Payment Methods",
+      type: "json"
+    });
+    console.log('Payment methods added.');
+  }
+  
   if (settingsExist.length === 0) {
     console.log('Creating site settings...');
     const settingsData = [
@@ -177,6 +233,66 @@ async function seed() {
         group: "homepage",
         label: "Hero Background Image",
         type: "image"
+      },
+      
+      // Shipping methods
+      {
+        key: "shipping_methods",
+        value: JSON.stringify([
+          { 
+            id: "standard", 
+            name: "Standard Shipping", 
+            description: "3-5 business days", 
+            price: 10 
+          },
+          { 
+            id: "express", 
+            name: "Express Shipping", 
+            description: "1-2 business days", 
+            price: 15 
+          }
+        ]),
+        group: "shipping",
+        label: "Shipping Methods",
+        type: "json"
+      },
+      
+      // Payment methods
+      {
+        key: "payment_methods",
+        value: JSON.stringify([
+          {
+            id: "cod",
+            name: "Cash on Delivery",
+            description: "Pay when you receive your order",
+            enabled: true
+          },
+          {
+            id: "paymob",
+            name: "Credit/Debit Card (Paymob)",
+            description: "Secure online payment with Paymob",
+            enabled: true
+          }
+        ]),
+        group: "payment",
+        label: "Payment Methods",
+        type: "json"
+      },
+      
+      // About Page Content
+      {
+        key: "about_title",
+        value: "About @byaimymmdoh",
+        group: "about",
+        label: "About Page Title",
+        type: "text"
+      },
+      {
+        key: "about_content",
+        value: "<p>Welcome to @byaimymmdoh, a leading brand in women's fashion. We're dedicated to bringing you the finest selection of casual, formal, soiree, and wedding dresses designed with elegance and attention to detail.</p><p>Our mission is to help women express their unique style through our thoughtfully designed collections that blend timeless elegance with contemporary trends.</p><p>Founded with a passion for empowering women through fashion, we've grown into a trusted name in the industry, known for our commitment to quality and customer satisfaction.</p><p>We invite you to explore our collections and discover the perfect pieces to enhance your wardrobe.</p>",
+        group: "about",
+        label: "About Page Content",
+        type: "textarea"
       }
     ];
     
