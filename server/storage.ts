@@ -4,7 +4,8 @@ import {
   products, type Product, type InsertProduct,
   orders, type Order, type InsertOrder,
   orderItems, type OrderItem, type InsertOrderItem,
-  carts, type Cart, type InsertCart, type CartItem
+  carts, type Cart, type InsertCart, type CartItem,
+  siteSettings, type SiteSetting, type InsertSiteSetting
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -53,8 +54,16 @@ export interface IStorage {
   getCart(sessionId: string): Promise<Cart | undefined>;
   createOrUpdateCart(sessionId: string, userId: number | undefined, items: Record<string, CartItem>): Promise<Cart>;
   
+  // Site settings methods
+  getAllSettings(): Promise<SiteSetting[]>;
+  getSettingsByGroup(group: string): Promise<SiteSetting[]>;
+  getSetting(key: string): Promise<SiteSetting | undefined>;
+  createSetting(setting: InsertSiteSetting): Promise<SiteSetting>;
+  updateSetting(id: number, setting: Partial<InsertSiteSetting>): Promise<SiteSetting | undefined>;
+  deleteSetting(id: number): Promise<boolean>;
+  
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
@@ -64,7 +73,8 @@ export class MemStorage implements IStorage {
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
   private carts: Map<string, Cart>;
-  sessionStore: session.SessionStore;
+  private siteSettings: Map<number, SiteSetting>;
+  sessionStore: session.Store;
   
   currentUserId: number;
   currentCategoryId: number;
@@ -72,6 +82,7 @@ export class MemStorage implements IStorage {
   currentOrderId: number;
   currentOrderItemId: number;
   currentCartId: number;
+  currentSettingId: number;
 
   constructor() {
     this.users = new Map();
@@ -109,16 +120,34 @@ export class MemStorage implements IStorage {
   private initializeCategories() {
     const categories: InsertCategory[] = [
       {
-        name: "Dresses",
-        slug: "dresses",
-        description: "Elegant dresses for all occasions",
+        name: "All Women",
+        slug: "all-women",
+        description: "All women's fashion collections",
         imageUrl: "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
       },
       {
-        name: "Tops",
-        slug: "tops",
-        description: "Stylish tops and blouses",
+        name: "Casual",
+        slug: "casual",
+        description: "Comfortable and stylish casual wear",
         imageUrl: "https://images.unsplash.com/photo-1551232864-3f0890e580d9?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        name: "Formal",
+        slug: "formal",
+        description: "Elegant formal attire for professional settings",
+        imageUrl: "https://images.unsplash.com/photo-1499971856191-1a420a42b498?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        name: "Soiree",
+        slug: "soiree",
+        description: "Glamorous evening wear for special occasions",
+        imageUrl: "https://images.unsplash.com/photo-1529898329131-c84e8007f9c6?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        name: "Designed Wedding Dresses",
+        slug: "wedding-dresses",
+        description: "Bespoke and luxurious wedding dresses",
+        imageUrl: "https://images.unsplash.com/photo-1525257831700-9f6c70677f2b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
       },
       {
         name: "Accessories",

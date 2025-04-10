@@ -155,3 +155,24 @@ export interface CartItem {
   quantity: number;
   imageUrl: string;
 }
+
+// Site Settings Schema
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value"),
+  group: text("group").notNull(),
+  label: text("label").notNull(),
+  type: text("type").notNull().default("text"),
+});
+
+export const insertSiteSettingSchema = createInsertSchema(siteSettings).pick({
+  key: true,
+  value: true,
+  group: true,
+  label: true,
+  type: true,
+});
+
+export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
