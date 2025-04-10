@@ -21,6 +21,7 @@ import AdminAddProduct from "@/pages/admin/add-product";
 import AdminEditProduct from "@/pages/admin/edit-product";
 import AdminCategories from "@/pages/admin/categories";
 import AdminOrders from "@/pages/admin/orders";
+import AdminSettings from "@/pages/admin/settings";
 
 function Router() {
   return (
@@ -43,6 +44,7 @@ function Router() {
       <ProtectedRoute path="/admin/products/edit/:id" component={AdminEditProduct} adminOnly />
       <ProtectedRoute path="/admin/categories" component={AdminCategories} adminOnly />
       <ProtectedRoute path="/admin/orders" component={AdminOrders} adminOnly />
+      <ProtectedRoute path="/admin/settings" component={AdminSettings} adminOnly />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

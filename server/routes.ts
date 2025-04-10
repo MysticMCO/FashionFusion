@@ -7,6 +7,7 @@ import {
   insertProductSchema,
   insertOrderSchema,
   insertOrderItemSchema,
+  insertSiteSettingSchema,
   type CartItem
 } from "@shared/schema";
 import { z } from "zod";
@@ -400,6 +401,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, order });
     } catch (error) {
       res.status(500).json({ message: "Failed to confirm payment" });
+    }
+  });
+  
+  // Site Settings routes
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get settings" });
+    }
+  });
+  
+  app.get("/api/settings/group/:group", async (req, res) => {
+    try {
+      const settings = await storage.getSettingsByGroup(req.params.group);
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get settings by group" });
+    }
+  });
+  
+  app.get("/api/settings/:key", async (req, res) => {
+    try {
+      const setting = await storage.getSetting(req.params.key);
+      if (!setting) {
+        return res.status(404).json({ message: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get setting" });
+    }
+  });
+  
+  // Admin Settings routes
+  app.post("/api/admin/settings", isAdmin, async (req, res) => {
+    try {
+      const parseResult = insertSiteSettingSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ errors: parseResult.error.format() });
+      }
+      
+      const setting = await storage.createSetting(parseResult.data);
+      res.status(201).json(setting);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create setting" });
+    }
+  });
+  
+  app.put("/api/admin/settings/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const parseResult = insertSiteSettingSchema.partial().safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ errors: parseResult.error.format() });
+      }
+      
+      const setting = await storage.updateSetting(id, parseResult.data);
+      if (!setting) {
+        return res.status(404).json({ message: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update setting" });
+    }
+  });
+  
+  app.delete("/api/admin/settings/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSetting(id);
+      if (!success) {
+        return res.status(404).json({ message: "Setting not found" });
+      }
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete setting" });
     }
   });
 

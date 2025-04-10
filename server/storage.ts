@@ -91,6 +91,7 @@ export class MemStorage implements IStorage {
     this.orders = new Map();
     this.orderItems = new Map();
     this.carts = new Map();
+    this.siteSettings = new Map();
     
     this.currentUserId = 1;
     this.currentCategoryId = 1;
@@ -98,6 +99,7 @@ export class MemStorage implements IStorage {
     this.currentOrderId = 1;
     this.currentOrderItemId = 1;
     this.currentCartId = 1;
+    this.currentSettingId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // 24 hours
@@ -115,6 +117,114 @@ export class MemStorage implements IStorage {
     
     // Initialize with sample categories
     this.initializeCategories();
+    
+    // Initialize default site settings
+    this.initializeSiteSettings();
+  }
+  
+  private initializeSiteSettings() {
+    const defaultSettings: InsertSiteSetting[] = [
+      // SEO settings
+      {
+        key: "site_title",
+        value: "@byaimymmdoh - Luxury Women's Fashion",
+        group: "seo",
+        label: "Site Title",
+        type: "text"
+      },
+      {
+        key: "site_description",
+        value: "Discover exclusive women's fashion collections at @byaimymmdoh - Your destination for casual, formal, soiree, and wedding dresses.",
+        group: "seo",
+        label: "Site Description",
+        type: "textarea"
+      },
+      {
+        key: "meta_keywords",
+        value: "women's fashion, luxury clothing, dresses, formal wear, wedding dresses, soiree, casual wear",
+        group: "seo",
+        label: "Meta Keywords",
+        type: "textarea"
+      },
+      
+      // Contact settings
+      {
+        key: "contact_email",
+        value: "info@byaimymmdoh.com",
+        group: "contact",
+        label: "Contact Email",
+        type: "email"
+      },
+      {
+        key: "contact_phone",
+        value: "+20 1234567890",
+        group: "contact",
+        label: "Contact Phone",
+        type: "text"
+      },
+      {
+        key: "contact_address",
+        value: "123 Fashion Avenue, Cairo, Egypt",
+        group: "contact",
+        label: "Contact Address",
+        type: "textarea"
+      },
+      
+      // Social media settings
+      {
+        key: "social_instagram",
+        value: "https://instagram.com/byaimymmdoh",
+        group: "social",
+        label: "Instagram URL",
+        type: "url"
+      },
+      {
+        key: "social_facebook",
+        value: "https://facebook.com/byaimymmdoh",
+        group: "social",
+        label: "Facebook URL",
+        type: "url"
+      },
+      {
+        key: "social_twitter",
+        value: "https://twitter.com/byaimymmdoh",
+        group: "social",
+        label: "Twitter URL",
+        type: "url"
+      },
+      
+      // Homepage settings
+      {
+        key: "hero_title",
+        value: "Elegance Redefined",
+        group: "homepage",
+        label: "Hero Title",
+        type: "text"
+      },
+      {
+        key: "hero_subtitle",
+        value: "Discover our exclusive collection of luxury women's fashion",
+        group: "homepage",
+        label: "Hero Subtitle",
+        type: "text"
+      },
+      {
+        key: "hero_cta_text",
+        value: "Shop Now",
+        group: "homepage",
+        label: "Hero CTA Text",
+        type: "text"
+      },
+      {
+        key: "hero_image",
+        value: "https://images.unsplash.com/photo-1529898329131-c84e8007f9c6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1800&q=80",
+        group: "homepage",
+        label: "Hero Background Image",
+        type: "image"
+      }
+    ];
+    
+    defaultSettings.forEach(setting => this.createSetting(setting));
   }
   
   private initializeCategories() {
@@ -367,6 +477,43 @@ export class MemStorage implements IStorage {
     };
     this.carts.set(sessionId, cart);
     return cart;
+  }
+  
+  // Site settings methods
+  async getAllSettings(): Promise<SiteSetting[]> {
+    return Array.from(this.siteSettings.values());
+  }
+  
+  async getSettingsByGroup(group: string): Promise<SiteSetting[]> {
+    return Array.from(this.siteSettings.values()).filter(
+      (setting) => setting.group === group
+    );
+  }
+  
+  async getSetting(key: string): Promise<SiteSetting | undefined> {
+    return Array.from(this.siteSettings.values()).find(
+      (setting) => setting.key === key
+    );
+  }
+  
+  async createSetting(insertSetting: InsertSiteSetting): Promise<SiteSetting> {
+    const id = this.currentSettingId++;
+    const setting: SiteSetting = { ...insertSetting, id };
+    this.siteSettings.set(id, setting);
+    return setting;
+  }
+  
+  async updateSetting(id: number, updatedSetting: Partial<InsertSiteSetting>): Promise<SiteSetting | undefined> {
+    const setting = this.siteSettings.get(id);
+    if (!setting) return undefined;
+    
+    const updated = { ...setting, ...updatedSetting };
+    this.siteSettings.set(id, updated);
+    return updated;
+  }
+  
+  async deleteSetting(id: number): Promise<boolean> {
+    return this.siteSettings.delete(id);
   }
 }
 
