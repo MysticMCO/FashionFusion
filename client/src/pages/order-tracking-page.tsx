@@ -50,43 +50,32 @@ export default function OrderTrackingPage() {
     setIsSearching(true);
     
     try {
-      // In a real implementation, this would be an API call to fetch the order
-      // For demonstration, we're simulating a successful order lookup
-      setTimeout(() => {
-        const mockOrder = {
-          id: values.orderId,
-          status: "processing",
-          paymentStatus: "paid",
-          createdAt: new Date().toISOString(),
-          customerName: "Customer",
-          customerEmail: values.email,
-          shippingAddress: "123 Customer Address",
-          total: 249.99,
-          items: [
-            {
-              id: 1,
-              name: "Elegant Evening Dress",
-              price: 199.99,
-              quantity: 1
-            },
-            {
-              id: 2,
-              name: "Fashion Accessory",
-              price: 49.99,
-              quantity: 1
-            }
-          ]
-        };
-        
-        setOrderDetails(mockOrder);
-        setIsSearching(false);
-      }, 1500);
-    } catch (error) {
+      // Call the order tracking API
+      const res = await fetch(`/api/orders/track`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: parseInt(values.orderId),
+          email: values.email
+        }),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to find order");
+      }
+      
+      const orderData = await res.json();
+      setOrderDetails(orderData);
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to find order. Please check your order ID and email.",
+        title: "Order Not Found",
+        description: error.message || "Failed to find order. Please check your order ID and email.",
         variant: "destructive"
       });
+    } finally {
       setIsSearching(false);
     }
   };

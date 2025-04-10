@@ -9,6 +9,11 @@ import ProductDetailsPage from "@/pages/product-details-page";
 import CartPage from "@/pages/cart-page";
 import CheckoutPage from "@/pages/checkout-page";
 import AuthPage from "@/pages/auth-page";
+import OrdersPage from "@/pages/orders-page";
+import OrderDetailsPage from "@/pages/order-details-page";
+import OrderTrackingPage from "@/pages/order-tracking-page";
+import AboutPage from "@/pages/about-page";
+import ContactPage from "@/pages/contact-page";
 import Layout from "@/components/layout/layout";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -33,9 +38,14 @@ function Router() {
       <Route path="/product/:slug" component={ProductDetailsPage} />
       <Route path="/cart" component={CartPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/track-order" component={OrderTrackingPage} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/contact" component={ContactPage} />
 
       {/* Protected routes */}
       <ProtectedRoute path="/checkout" component={CheckoutPage} />
+      <ProtectedRoute path="/orders" component={OrdersPage} />
+      <ProtectedRoute path="/orders/:id" component={OrderDetailsPage} />
 
       {/* Admin routes */}
       <ProtectedRoute path="/admin" component={AdminDashboard} adminOnly />
