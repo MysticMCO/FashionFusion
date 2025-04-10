@@ -30,33 +30,33 @@ export default function Footer() {
             <h4 className="text-sm font-medium uppercase tracking-wider mb-6">Shop</h4>
             <ul className="space-y-3">
               <li>
+                <Link href="/products/category/all-women" className="text-gray-300 hover:text-white transition-colors">
+                  All Women
+                </Link>
+              </li>
+              <li>
+                <Link href="/products/category/casual" className="text-gray-300 hover:text-white transition-colors">
+                  Casual
+                </Link>
+              </li>
+              <li>
+                <Link href="/products/category/formal" className="text-gray-300 hover:text-white transition-colors">
+                  Formal
+                </Link>
+              </li>
+              <li>
+                <Link href="/products/category/soiree" className="text-gray-300 hover:text-white transition-colors">
+                  Soiree
+                </Link>
+              </li>
+              <li>
+                <Link href="/products/category/wedding" className="text-gray-300 hover:text-white transition-colors">
+                  Wedding
+                </Link>
+              </li>
+              <li>
                 <Link href="/products/category/new-arrivals" className="text-gray-300 hover:text-white transition-colors">
                   New Arrivals
-                </Link>
-              </li>
-              <li>
-                <Link href="/products/category/dresses" className="text-gray-300 hover:text-white transition-colors">
-                  Dresses
-                </Link>
-              </li>
-              <li>
-                <Link href="/products/category/tops" className="text-gray-300 hover:text-white transition-colors">
-                  Tops
-                </Link>
-              </li>
-              <li>
-                <Link href="/products/category/bottoms" className="text-gray-300 hover:text-white transition-colors">
-                  Bottoms
-                </Link>
-              </li>
-              <li>
-                <Link href="/products/category/accessories" className="text-gray-300 hover:text-white transition-colors">
-                  Accessories
-                </Link>
-              </li>
-              <li>
-                <Link href="/products/category/sale" className="text-gray-300 hover:text-white transition-colors">
-                  Sale
                 </Link>
               </li>
             </ul>

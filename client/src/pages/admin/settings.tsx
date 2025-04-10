@@ -99,6 +99,30 @@ export default function AdminSettings() {
         return <Input {...inputProps} type="url" />;
       case "email":
         return <Input {...inputProps} type="email" />;
+      case "json":
+        // For settings like shipping_methods or payment_methods that are stored as JSON
+        try {
+          const parsedValue = setting.value ? JSON.parse(setting.value) : "";
+          return (
+            <Textarea 
+              {...inputProps}
+              rows={8}
+              defaultValue={setting.value ? JSON.stringify(parsedValue, null, 2) : ""}
+              className="font-mono text-sm"
+            />
+          );
+        } catch (error) {
+          return (
+            <div>
+              <Textarea 
+                {...inputProps}
+                rows={8}
+                className="font-mono text-sm border-red-500"
+              />
+              <p className="text-xs text-red-500 mt-1">Invalid JSON format</p>
+            </div>
+          );
+        }
       case "image":
         return (
           <div className="space-y-2">

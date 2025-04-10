@@ -21,16 +21,16 @@ export default function HeroSection() {
           </p>
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
             <Link 
-              href="/products/category/women" 
+              href="/products/category/all-women" 
               className="bg-white text-primary px-8 py-3 font-medium text-sm tracking-wide hover:bg-accent hover:text-white transition-colors inline-block text-center"
             >
-              Shop Women
+              Shop All Women
             </Link>
             <Link 
-              href="/products/category/men" 
+              href="/products/category/new-arrivals" 
               className="bg-transparent border border-white text-white px-8 py-3 font-medium text-sm tracking-wide hover:bg-white hover:text-primary transition-colors inline-block text-center"
             >
-              Shop Men
+              New Arrivals
             </Link>
           </div>
         </div>
