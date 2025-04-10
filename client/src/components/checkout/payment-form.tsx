@@ -1,65 +1,43 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { CreditCard, ShieldCheck, Link as LinkIcon } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 
-// Payment form schema
-const paymentFormSchema = z.object({
-  paymentMethod: z.enum(["credit_card", "paymob"]),
-  cardNumber: z.string().optional()
-    .refine(val => !val || val.replace(/\s/g, '').length === 16, {
-      message: "Card number must be 16 digits",
-    }),
-  cardName: z.string().optional(),
-  expiryDate: z.string().optional()
-    .refine(val => !val || /^(0[1-9]|1[0-2])\/\d{2}$/.test(val), {
-      message: "Expiry date must be in MM/YY format",
-    }),
-  cvv: z.string().optional()
-    .refine(val => !val || (val.length >= 3 && val.length <= 4), {
-      message: "CVV must be 3 or 4 digits",
-    }),
-  saveCard: z.boolean().optional(),
-}).refine((data) => {
-  // If credit_card is selected, validate card fields
-  if (data.paymentMethod === 'credit_card') {
-    return !!data.cardNumber && !!data.cardName && !!data.expiryDate && !!data.cvv;
-  }
-  return true;
-}, {
-  message: "Card details are required for credit card payments",
-  path: ["paymentMethod"],
+export const paymentSchema = z.object({
+  paymentMethod: z.enum(["cod", "paymob"]),
+  cardholderName: z.string().optional(),
+  cardNumber: z.string().optional(),
+  expiryDate: z.string().optional(),
+  cvv: z.string().optional(),
 });
 
-export type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+export type PaymentFormValues = z.infer<typeof paymentSchema>;
 
-interface PaymentFormProps {
+type PaymentFormProps = {
   onSubmit: (data: PaymentFormValues) => void;
-  isProcessing?: boolean;
-}
+  isProcessing: boolean;
+};
 
-export default function PaymentForm({ 
-  onSubmit, 
-  isProcessing = false 
-}: PaymentFormProps) {
+export default function PaymentForm({ onSubmit, isProcessing }: PaymentFormProps) {
+  const [paymentMethod, setPaymentMethod] = useState<string>("cod");
+  
   const form = useForm<PaymentFormValues>({
-    resolver: zodResolver(paymentFormSchema),
+    resolver: zodResolver(paymentSchema),
     defaultValues: {
-      paymentMethod: "paymob",
-      saveCard: false,
+      paymentMethod: "cod",
+      cardholderName: "",
+      cardNumber: "",
+      expiryDate: "",
+      cvv: "",
     },
   });
   
@@ -73,44 +51,48 @@ export default function PaymentForm({
           name="paymentMethod"
           render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Payment Method</FormLabel>
+              <FormLabel>Select Payment Method</FormLabel>
               <FormControl>
                 <RadioGroup
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setPaymentMethod(value);
+                  }}
                   defaultValue={field.value}
-                  className="flex flex-col space-y-1"
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
                 >
-                  <div className="flex items-center space-x-2 border p-4 rounded-md">
-                    <RadioGroupItem value="paymob" id="paymob" />
-                    <div className="grid gap-1 flex-1">
-                      <label htmlFor="paymob" className="font-medium cursor-pointer">
-                        Pay with Paymob
-                      </label>
-                      <p className="text-sm text-muted-foreground">
-                        Secure payment processing
-                      </p>
-                    </div>
-                    <div className="flex items-center font-medium">
-                      <img 
-                        src="https://accept.paymobsolutions.com/imgs/logosc.png" 
-                        alt="Paymob" 
-                        className="h-8" 
-                      />
-                    </div>
+                  <div>
+                    <RadioGroupItem value="cod" id="cod" className="peer sr-only" />
+                    <Label
+                      htmlFor="cod"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div className="space-y-1 text-left">
+                          <p className="text-sm font-medium leading-none">Cash on Delivery</p>
+                          <p className="text-sm text-muted-foreground">
+                            Pay when you receive your order
+                          </p>
+                        </div>
+                      </div>
+                    </Label>
                   </div>
-                  <div className="flex items-center space-x-2 border p-4 rounded-md">
-                    <RadioGroupItem value="credit_card" id="credit_card" />
-                    <div className="grid gap-1 flex-1">
-                      <label htmlFor="credit_card" className="font-medium cursor-pointer">
-                        Credit Card
-                      </label>
-                      <p className="text-sm text-muted-foreground">
-                        Pay with Visa, Mastercard, etc.
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <CreditCard className="h-5 w-5" />
-                    </div>
+                  
+                  <div>
+                    <RadioGroupItem value="paymob" id="paymob" className="peer sr-only" />
+                    <Label
+                      htmlFor="paymob"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div className="space-y-1 text-left">
+                          <p className="text-sm font-medium leading-none">Credit/Debit Card</p>
+                          <p className="text-sm text-muted-foreground">
+                            Pay with PayMob
+                          </p>
+                        </div>
+                      </div>
+                    </Label>
                   </div>
                 </RadioGroup>
               </FormControl>
@@ -119,126 +101,102 @@ export default function PaymentForm({
           )}
         />
         
-        {/* Credit Card Fields - Only show if credit_card is selected */}
-        {watchPaymentMethod === "credit_card" && (
-          <div className="space-y-4 pt-2">
-            <FormField
-              control={form.control}
-              name="cardNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Card Number</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="1234 5678 9012 3456" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="cardName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cardholder Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="John Doe" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="expiryDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Expiry Date</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="MM/YY" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="cvv"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CVV</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="123" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="saveCard"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <Label htmlFor="saveCard">
-                      Save card for future purchases
-                    </Label>
-                  </div>
-                </FormItem>
-              )}
-            />
-          </div>
-        )}
-        
-        {/* Security Notice */}
-        <div className="bg-neutral p-4 rounded-md flex items-start space-x-3 text-sm">
-          <ShieldCheck className="h-5 w-5 text-green-600 mt-0.5" />
-          <div>
-            <p className="font-medium">Secure Payment</p>
-            <p className="text-gray-600">
-              Your payment information is encrypted and never stored on our servers.
-              All transactions are secure and processed by our payment provider.
-            </p>
-            <p className="mt-2 flex items-center text-blue-600">
-              <LinkIcon className="h-3 w-3 mr-1" />
-              <a href="https://paymob.com" target="_blank" rel="noopener noreferrer">
-                Learn more about our payment security
-              </a>
-            </p>
+        <div className={cn(watchPaymentMethod === "cod" ? "hidden" : "block")}>
+          <Separator className="my-4" />
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 gap-4">
+                <FormField
+                  control={form.control}
+                  name="cardholderName"
+                  rules={{
+                    required: watchPaymentMethod === "paymob"
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cardholder Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Name on card" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="cardNumber"
+                  rules={{
+                    required: watchPaymentMethod === "paymob"
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Card Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="1234 5678 9012 3456" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="expiryDate"
+                    rules={{
+                      required: watchPaymentMethod === "paymob"
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Expiry Date</FormLabel>
+                        <FormControl>
+                          <Input placeholder="MM/YY" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="cvv"
+                    rules={{
+                      required: watchPaymentMethod === "paymob"
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CVV</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="text-sm mt-4 text-muted-foreground">
+            <p>Your payment will be processed securely via PayMob.</p>
           </div>
         </div>
         
-        <Button 
-          type="submit" 
-          className="w-full bg-primary hover:bg-accent"
-          disabled={isProcessing}
-        >
-          {isProcessing ? "Processing Payment..." : "Complete Purchase"}
-        </Button>
+        <div className="flex justify-end space-x-4">
+          <Button type="submit" disabled={isProcessing}>
+            {isProcessing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>Complete Order</>
+            )}
+          </Button>
+        </div>
       </form>
     </Form>
   );

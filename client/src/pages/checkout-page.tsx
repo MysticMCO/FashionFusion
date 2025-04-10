@@ -83,27 +83,41 @@ function CheckoutPageContent() {
       const orderResponse = await apiRequest("POST", "/api/orders", orderData);
       const orderResult = await orderResponse.json();
       
-      // Create payment intent with Paymob
-      const paymentResponse = await apiRequest("POST", "/api/payment/paymob/create", {
-        amount: total,
-        orderId: orderResult.id
-      });
-      const paymentResult = await paymentResponse.json();
-      
-      // Simulate successful payment (in a real app, this would redirect to Paymob)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Confirm payment
-      const confirmResponse = await apiRequest("POST", "/api/payment/paymob/confirm", {
-        paymentIntentId: paymentResult.paymentIntent.id,
-        orderId: orderResult.id
-      });
-      
-      // Handle successful payment
-      setOrderId(orderResult.id);
-      setOrderComplete(true);
-      clearCart();
-      setCurrentStep('confirmation');
+      // Handle payment based on selected method
+      if (data.paymentMethod === "cod") {
+        // For Cash on Delivery, simply mark the order as processing with pending payment
+        await apiRequest("PUT", `/api/admin/orders/${orderResult.id}/status`, {
+          status: "processing",
+          paymentStatus: "pending"
+        });
+        
+        setOrderId(orderResult.id);
+        setOrderComplete(true);
+        clearCart();
+        setCurrentStep('confirmation');
+      } else if (data.paymentMethod === "paymob") {
+        // Create payment intent with Paymob
+        const paymentResponse = await apiRequest("POST", "/api/payment/paymob/create", {
+          amount: total,
+          orderId: orderResult.id
+        });
+        const paymentResult = await paymentResponse.json();
+        
+        // Simulate successful payment (in a real app, this would redirect to Paymob)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Confirm payment
+        await apiRequest("POST", "/api/payment/paymob/confirm", {
+          paymentIntentId: paymentResult.paymentIntent.id,
+          orderId: orderResult.id
+        });
+        
+        // Handle successful payment
+        setOrderId(orderResult.id);
+        setOrderComplete(true);
+        clearCart();
+        setCurrentStep('confirmation');
+      }
     } catch (error) {
       console.error("Payment error:", error);
       setPaymentError(error instanceof Error ? error.message : "An unknown error occurred");

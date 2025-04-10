@@ -1,57 +1,84 @@
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { useQuery } from "@tanstack/react-query";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SiteSetting } from "@shared/schema";
 
-// Shipping form schema
-const shippingFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(7, "Valid phone number is required"),
+// Define shipping methods schema
+export const shippingSchema = z.object({
+  firstName: z.string().min(2, "First name is required"),
+  lastName: z.string().min(2, "Last name is required"),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().min(5, "Phone number is required"),
   address: z.string().min(5, "Address is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State/Province is required"),
-  postalCode: z.string().min(1, "Postal code is required"),
-  country: z.string().min(1, "Country is required"),
-  shippingMethod: z.enum(["standard", "express", "overnight"]),
-  notes: z.string().optional(),
+  city: z.string().min(2, "City is required"),
+  state: z.string().min(2, "State/Province is required"),
+  postalCode: z.string().min(2, "Postal code is required"),
+  country: z.string().min(2, "Country is required"),
+  shippingMethod: z.string()
 });
 
-export type ShippingFormValues = z.infer<typeof shippingFormSchema>;
+export type ShippingFormValues = z.infer<typeof shippingSchema>;
 
-interface ShippingFormProps {
+type ShippingFormProps = {
   onSubmit: (data: ShippingFormValues) => void;
   defaultValues?: Partial<ShippingFormValues>;
-}
+};
 
-export default function ShippingForm({ 
-  onSubmit, 
-  defaultValues = {
-    shippingMethod: "standard"
-  } 
-}: ShippingFormProps) {
+export default function ShippingForm({ onSubmit, defaultValues = {} }: ShippingFormProps) {
+  const [shippingMethods, setShippingMethods] = useState<{id: string, name: string, description: string, price: number}[]>([
+    { id: "standard", name: "Standard Shipping", description: "3-5 business days", price: 10 },
+    { id: "express", name: "Express Shipping", description: "1-2 business days", price: 15 }
+  ]);
+  
+  // Fetch shipping methods from settings
+  const { data: shippingSettings } = useQuery({
+    queryKey: ["/api/settings/group/shipping"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings/group/shipping");
+      if (!res.ok) throw new Error("Failed to fetch shipping settings");
+      return res.json() as Promise<SiteSetting[]>;
+    }
+  });
+  
+  useEffect(() => {
+    if (shippingSettings) {
+      try {
+        const shippingMethodsSetting = shippingSettings.find(s => s.key === "shipping_methods");
+        if (shippingMethodsSetting && shippingMethodsSetting.value) {
+          const methods = JSON.parse(shippingMethodsSetting.value);
+          if (Array.isArray(methods) && methods.length > 0) {
+            setShippingMethods(methods);
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing shipping methods:", error);
+      }
+    }
+  }, [shippingSettings]);
+  
   const form = useForm<ShippingFormValues>({
-    resolver: zodResolver(shippingFormSchema),
-    defaultValues,
+    resolver: zodResolver(shippingSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "Egypt",
+      shippingMethod: "standard",
+      ...defaultValues
+    }
   });
   
   return (
@@ -65,7 +92,7 @@ export default function ShippingForm({
               <FormItem>
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your first name" {...field} />
+                  <Input placeholder="First name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -79,7 +106,7 @@ export default function ShippingForm({
               <FormItem>
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your last name" {...field} />
+                  <Input placeholder="Last name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -95,7 +122,7 @@ export default function ShippingForm({
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Enter your email" {...field} />
+                  <Input type="email" placeholder="Email address" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -109,7 +136,7 @@ export default function ShippingForm({
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your phone number" {...field} />
+                  <Input placeholder="Phone number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -124,14 +151,14 @@ export default function ShippingForm({
             <FormItem>
               <FormLabel>Address</FormLabel>
               <FormControl>
-                <Textarea placeholder="Enter your street address" {...field} />
+                <Input placeholder="Street address" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FormField
             control={form.control}
             name="city"
@@ -153,7 +180,7 @@ export default function ShippingForm({
               <FormItem>
                 <FormLabel>State/Province</FormLabel>
                 <FormControl>
-                  <Input placeholder="State" {...field} />
+                  <Input placeholder="State/Province" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -173,37 +200,33 @@ export default function ShippingForm({
               </FormItem>
             )}
           />
-          
-          <FormField
-            control={form.control}
-            name="country"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select country" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="egypt">Egypt</SelectItem>
-                    <SelectItem value="usa">United States</SelectItem>
-                    <SelectItem value="uk">United Kingdom</SelectItem>
-                    <SelectItem value="canada">Canada</SelectItem>
-                    <SelectItem value="france">France</SelectItem>
-                    <SelectItem value="germany">Germany</SelectItem>
-                    <SelectItem value="italy">Italy</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
+        
+        <FormField
+          control={form.control}
+          name="country"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Country</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Egypt">Egypt</SelectItem>
+                  <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
+                  <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <FormField
           control={form.control}
@@ -215,38 +238,17 @@ export default function ShippingForm({
                 <RadioGroup
                   onValueChange={field.onChange}
                   defaultValue={field.value}
-                  className="flex flex-col space-y-1"
+                  className="flex flex-col space-y-3"
                 >
-                  <div className="flex items-center space-x-2 border p-4 rounded-md">
-                    <RadioGroupItem value="standard" id="standard" />
-                    <div className="grid gap-1 flex-1">
-                      <label htmlFor="standard" className="font-medium cursor-pointer">
-                        Standard Shipping (3-5 business days)
-                      </label>
-                      <p className="text-sm text-muted-foreground">$10.00</p>
+                  {shippingMethods.map((method) => (
+                    <div key={method.id} className="flex items-center space-x-3 space-y-0">
+                      <RadioGroupItem value={method.id} id={method.id} />
+                      <Label htmlFor={method.id} className="flex-1 cursor-pointer">
+                        <div className="font-medium">{method.name} - ${method.price}</div>
+                        <div className="text-sm text-muted-foreground">{method.description}</div>
+                      </Label>
                     </div>
-                    <div className="font-medium">Free</div>
-                  </div>
-                  <div className="flex items-center space-x-2 border p-4 rounded-md">
-                    <RadioGroupItem value="express" id="express" />
-                    <div className="grid gap-1 flex-1">
-                      <label htmlFor="express" className="font-medium cursor-pointer">
-                        Express Shipping (2-3 business days)
-                      </label>
-                      <p className="text-sm text-muted-foreground">Faster delivery</p>
-                    </div>
-                    <div className="font-medium">$15.00</div>
-                  </div>
-                  <div className="flex items-center space-x-2 border p-4 rounded-md">
-                    <RadioGroupItem value="overnight" id="overnight" />
-                    <div className="grid gap-1 flex-1">
-                      <label htmlFor="overnight" className="font-medium cursor-pointer">
-                        Overnight Shipping (1 business day)
-                      </label>
-                      <p className="text-sm text-muted-foreground">Fastest option available</p>
-                    </div>
-                    <div className="font-medium">$25.00</div>
-                  </div>
+                  ))}
                 </RadioGroup>
               </FormControl>
               <FormMessage />
@@ -254,27 +256,11 @@ export default function ShippingForm({
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Order Notes (Optional)</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Special delivery instructions or additional information" 
-                  {...field} 
-                  className="h-24"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <Button type="submit" className="w-full bg-primary hover:bg-accent">
-          Continue to Payment
-        </Button>
+        <div className="flex justify-end space-x-4">
+          <Button type="submit">
+            Continue to Payment
+          </Button>
+        </div>
       </form>
     </Form>
   );
